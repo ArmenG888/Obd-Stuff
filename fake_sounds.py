@@ -69,14 +69,19 @@ class Burbler:
         self.last_burble_time = 0
 
         self.COOLDOWN = 1.2       # seconds
-        self.RPM_MIN = 1000
-        self.THROTTLE_DROP = 6   # %
+        self.RPM_MIN = 800
+        self.THROTTLE_DROP = 0.3   # %
 
     def update(self):
-        rpm = obd_command("RPM")
-        speed = obd_command("SPEED")
-        throttle = obd_command("THROTTLE_POS")
-        print(rpm, throttle)
+        rpm = connection.query(obd.commands.RPM)
+        rpm = float(str(rpm.value).split(" ")[0])
+        speed = connection.query(obd.commands.SPEED)
+        speed = float(str(speed.value).split(" ")[0])
+        throttle = connection.query(obd.commands.THROTTLE_POS)
+        throttle = float(str(throttle.value).split(" ")[0])
+        
+        print(rpm, speed, throttle)
+
         gear = estimate_gear(rpm, speed)
 
         now = time.time()
@@ -89,8 +94,9 @@ class Burbler:
             throttle_drop > self.THROTTLE_DROP and
             now - self.last_burble_time > self.COOLDOWN
         ):
-            heavy = rpm > 4000 or gear_changed
+            heavy = rpm > 1000 or gear_changed
             play_burble(heavy)
+            print("burble")
             self.last_burble_time = now
 
         self.last_throttle = throttle
