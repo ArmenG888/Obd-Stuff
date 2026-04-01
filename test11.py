@@ -1,5 +1,6 @@
 import obd
-import os
+import os, time, requests
+from datetime import datetime
 connection = obd.OBD("COM8")
 
 if not connection.is_connected():
@@ -8,15 +9,28 @@ if not connection.is_connected():
 
 print("good")
 
+url = "http://192.168.1.10:8000/upload"
 
-supported = connection.supported_commands
+#supported = connection.supported_commands
 #print(supported)
-#for cmd in supported:#
-##	resp = connection.query(cmd)
-#	print(f"{cmd.name} {resp.value}")
+#for cmd in supported:
+	#resp = connection.query(cmd)
+	#print(f"{cmd.name} {resp.value}")
 
-for i in range(1000):
-	cmd = obd.commands.RPM
-	response = connection.query(cmd)
-	print(float(str(response.value).split(" ")[0]))
+while True:
+	try:
+		for i in range(10):
+			cmd = obd.commands.ELM_VOLTAGE
+			response = connection.query(cmd)
+			voltage = str(response.value)
+			data = {
+				"timestamp": datetime.now().strftime("%m/%d/%Y %H:%M"),
+				"voltage": voltage
+			}
+			response = requests.post(url, json=data)
+			print(response.json())
+			time.sleep(0.1)
+	except Exception as e:
+		print(e)
+	time.sleep(10)
 	

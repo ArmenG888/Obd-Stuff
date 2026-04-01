@@ -22,7 +22,7 @@ if not connection.is_connected():
 print("good")
 
 # REQUIRED for Hyundai/Kiav
-connection.connection.set_header("7E4")
+#connection.connection.set_header("7E4")
 
 # Register custom commands
 connection.supported_commands.add(REAR_RPM := OBDCommand(
