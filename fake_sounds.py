@@ -2,9 +2,6 @@ import sys, time, threading, random
 import obd
 import pygame
 
-# =======================
-# OBD SETUP
-# =======================
 connection = obd.OBD("COM8")
 
 def obd_command(command, type="float"):
@@ -18,9 +15,6 @@ def obd_command(command, type="float"):
         return 0
 
 
-# =======================
-# AUDIO SETUP
-# =======================
 pygame.mixer.init()
 
 burble_short  = pygame.mixer.Sound("burble_short.mp3")
@@ -36,79 +30,57 @@ def play_burble(heavy=False):
     sound = random.choice(HEAVY_BURBLES if heavy else LIGHT_BURBLES)
     sound.play()
 
-
-# =======================
-# GEAR ESTIMATION
-# =======================
-def estimate_gear(rpm, speed_kmh, tire_circ_m=2.32, final_drive=3.320):
-    ratios = {
-        1: 4.808 * final_drive,
-        2: 2.901 * final_drive,
-        3: 1.864 * final_drive,
-        4: 1.424 * final_drive,
-        5: 1.219 * final_drive,
-        6: 1.000 * final_drive,
-        7: 0.799 * final_drive,
-        8: 0.648 * final_drive,
-    }
-
-    if speed_kmh < 5:
-        return 0
-
-    combined = (rpm * tire_circ_m * 60) / (1000 * speed_kmh)
-    return min(ratios, key=lambda g: abs(ratios[g] - combined))
-
-
-# =======================
-# BURBLER LOGIC
-# =======================
 class Burbler:
     def __init__(self):
         self.last_throttle = 0
         self.last_gear = 0
         self.last_burble_time = 0
+        self.last_rpm = 0
 
         self.COOLDOWN = 1.2       # seconds
         self.RPM_MIN = 800
-        self.THROTTLE_DROP = 0.3   # %
+        self.THROTTLE_DROP = 5   # %
 
     def update(self):
-        rpm = connection.query(obd.commands.RPM)
-        rpm = float(str(rpm.value).split(" ")[0])
-        speed = connection.query(obd.commands.SPEED)
-        speed = float(str(speed.value).split(" ")[0])
-        throttle = connection.query(obd.commands.THROTTLE_POS)
-        throttle = float(str(throttle.value).split(" ")[0])
-        
-        print(rpm, speed, throttle)
+        try:
+            rpm = connection.query(obd.commands.RPM)
+            rpm = float(str(rpm.value).split(" ")[0])
+            speed = connection.query(obd.commands.SPEED)
+            speed = float(str(speed.value).split(" ")[0])
+            throttle = connection.query(obd.commands.THROTTLE_POS)
+            throttle = float(str(throttle.value).split(" ")[0])
+            
+            print(rpm, speed, throttle)
 
-        gear = estimate_gear(rpm, speed)
+            #gear = estimate_gear(rpm, speed)
 
-        now = time.time()
-        throttle_drop = self.last_throttle - throttle
-        gear_changed = gear != self.last_gear
+            now = time.time()
+            throttle_drop = self.last_throttle - throttle
+            #gear_changed = gear != self.last_gear
 
-        # -------- BURBLE CONDITIONS --------
-        if (
-            rpm > self.RPM_MIN and
-            throttle_drop > self.THROTTLE_DROP and
-            now - self.last_burble_time > self.COOLDOWN
-        ):
-            heavy = rpm > 1000 or gear_changed
-            play_burble(heavy)
-            print("burble")
-            self.last_burble_time = now
+            # -------- BURBLE CONDITIONS --------
+            if (rpm > self.RPM_MIN and throttle_drop > self.THROTTLE_DROP):
+                heavy = rpm > 4000
+                play_burble(heavy)
+                print("burble")
+                self.last_burble_time = now
+            #if ((rpm - self.last_rpm) > 500) and (throttle < 20):
+            #    play_burble(heavy)
 
-        self.last_throttle = throttle
-        self.last_gear = gear
+            #if (throttle > 70)   and ((self.last_rpm - rpm) > 0):
+            #    burble_shift.play()
 
+            #if(gear != last_gear):
+                #burble_shift.play()
 
-# =======================
-# MAIN LOOP
-# =======================
+            self.last_throttle = throttle
+            self.last_rpm = rpm
+        except Exception:
+            pass
+
 def run():
     burbler = Burbler()
-    print("🔥 Burbler running...")
+    print("running")
 
     while True:
         burbler.update()
