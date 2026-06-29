@@ -14,8 +14,15 @@ RAW_220101 = OBDCommand(
     header=b"7E4"
 )
 
-connection = obd.OBD(fast=False, timeout=2)
-response = connection.query(RAW_220101)
+connection = obd.OBD("COM8")
+
+if not connection.is_connected():
+    print("nla")
+    exit()
+
+print("good")
+
+response = connection.query(RAW_220101,force=True)
 
 print(response.value)
 connection.close()

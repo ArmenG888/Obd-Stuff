@@ -13,7 +13,7 @@ def front_motor_rpm(messages):
     data = messages[0].data
     return signed(data[55]) * 256 + data[56]
 
-connection = obd.OBD("COM8", fast=False)
+connection = obd.OBD("COM6", fast=False)
 
 if not connection.is_connected():
     print("nla")
