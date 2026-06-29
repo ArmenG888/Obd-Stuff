@@ -83,6 +83,7 @@ connection = obd.OBD("COM8", fast=False, timeout=2)
 print("Connected:", connection.is_connected())
 print("Status:", connection.status())
 last_kw = 0
+last_pitch_step = 0
 try:
     while True:
         r = connection.query(RAW_220101, force=True)
@@ -113,9 +114,10 @@ try:
             if ch:
                 ch.play(burble)
                 print(" BURBLE")
-        time.sleep(0.1)
         
+
         last_kw = kw
+        time.sleep(0.05)
 except KeyboardInterrupt:
     pass
 
